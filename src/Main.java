@@ -19,7 +19,7 @@ public class Main {
 
         File f = new File(args[0]);
         if (!f.isDirectory()) {
-            print("`" + args[0] + "` is not a valid directory");
+            print("'" + args[0] + "' is not a valid directory");
             System.exit(1);
         } else {
             for (File p : f.listFiles()) {
