@@ -13,7 +13,7 @@ def gen_file(target, support_level, number_of_baskets):
         t.write(str(support_level))
         t.write('\n')
         for basket in range(number_of_baskets):
-             t.write(str(basket))
+             t.write(str(basket+1))
              size = choice([3,4,5,6,7,8,9,10])
              for _ in range(size):
                  el = choice([0,1,2,3,4,5,6,7,8,9])
