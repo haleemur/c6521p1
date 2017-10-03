@@ -1,10 +1,11 @@
-import java.io.*;
-
 /**
  * The main file launches the program
  * the program accepts 1 argument that must be
  * a directory path
  */
+import java.io.*;
+
+
 public class Main {
 
 
@@ -17,17 +18,17 @@ public class Main {
             System.exit(1);
         }
 
-        File f = new File(args[0]);
-        if (!f.isDirectory()) {
+        File dir = new File(args[0]);
+        if (!dir.isDirectory()) {
             print("'" + args[0] + "' is not a valid directory");
             System.exit(1);
         } else {
-            for (File p : f.listFiles()) {
-                Thread t = new Thread(new Reader(p));
-                t.start();
+            for (File file : dir.listFiles()) {
+                if (!file.isDirectory()) {
+                    Thread t = new Thread(new BasketReader(file));
+                    t.start();
+                }
             }
         }
-
-
     }
 }
