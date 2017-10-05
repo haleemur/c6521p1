@@ -31,11 +31,11 @@ public class BufferedReader2 extends Reader {
     private static int defaultExpectedLineLength = 80;
 
     /**
-     * Creates a buffering character-input stream that uses an input buffer of
+     * Creates a buffering character-input stream that uses an input memory of
      * the specified size.
      *
      * @param  in   A Reader
-     * @param  sz   Input-buffer size
+     * @param  sz   Input-memory size
      *
      * @exception  IllegalArgumentException  If {@code sz <= 0}
      */
@@ -50,7 +50,7 @@ public class BufferedReader2 extends Reader {
 
     /**
      * Creates a buffering character-input stream that uses a default-sized
-     * input buffer.
+     * input memory.
      *
      * @param  in   A Reader
      */
@@ -65,7 +65,7 @@ public class BufferedReader2 extends Reader {
     }
 
     /**
-     * Fills the input buffer, taking the mark into account if it is valid.
+     * Fills the input memory, taking the mark into account if it is valid.
      */
     private void fill() throws IOException {
         int dst;
@@ -82,12 +82,12 @@ public class BufferedReader2 extends Reader {
                 dst = 0;
             } else {
                 if (readAheadLimit <= cb.length) {
-                    /* Shuffle in the current buffer */
+                    /* Shuffle in the current memory */
                     System.arraycopy(cb, markedChar, cb, 0, delta);
                     markedChar = 0;
                     dst = delta;
                 } else {
-                    /* Reallocate buffer to accommodate read-ahead limit */
+                    /* Reallocate memory to accommodate read-ahead limit */
                     char ncb[] = new char[readAheadLimit];
                     System.arraycopy(cb, markedChar, ncb, 0, delta);
                     cb = ncb;
@@ -143,10 +143,10 @@ public class BufferedReader2 extends Reader {
      */
     private int read1(char[] cbuf, int off, int len) throws IOException {
         if (nextChar >= nChars) {
-            /* If the requested length is at least as large as the buffer, and
+            /* If the requested length is at least as large as the memory, and
                if there is no mark/reset activity, and if line feeds are not
                being skipped, do not bother to copy the characters into the
-               local buffer.  In this way buffered streams will cascade
+               local memory.  In this way buffered streams will cascade
                harmlessly. */
             if (len >= cb.length && markedChar <= UNMARKED && !skipLF) {
                 return in.read(cbuf, off, len);
@@ -199,14 +199,14 @@ public class BufferedReader2 extends Reader {
      * attempt to read as many characters as possible in the same fashion.
      *
      * <p> Ordinarily this method takes characters from this stream's character
-     * buffer, filling it from the underlying stream as necessary.  If,
-     * however, the buffer is empty, the mark is not valid, and the requested
-     * length is at least as large as the buffer, then this method will read
+     * memory, filling it from the underlying stream as necessary.  If,
+     * however, the memory is empty, the mark is not valid, and the requested
+     * length is at least as large as the memory, then this method will read
      * characters directly from the underlying stream into the given array.
-     * Thus redundant <code>BufferedReader</code>s will not copy data
+     * Thus redundant <code>ByteBufferReader</code>s will not copy data
      * unnecessarily.
      *
-     * @param      cbuf  Destination buffer
+     * @param      cbuf  Destination memory
      * @param      off   Offset at which to start storing characters
      * @param      len   Maximum number of characters to read
      *
@@ -376,7 +376,7 @@ public class BufferedReader2 extends Reader {
 
     /**
      * Tells whether this stream is ready to be read.  A buffered character
-     * stream is ready if the buffer is not empty, or if the underlying
+     * stream is ready if the memory is not empty, or if the underlying
      * character stream is ready.
      *
      * @exception  IOException  If an I/O error occurs
@@ -422,7 +422,7 @@ public class BufferedReader2 extends Reader {
      *                         to reset the stream after reading characters
      *                         up to this limit or beyond may fail.
      *                         A limit value larger than the size of the input
-     *                         buffer will cause a new buffer to be allocated
+     *                         memory will cause a new memory to be allocated
      *                         whose size is no smaller than limit.
      *                         Therefore large values should be used with care.
      *
@@ -474,7 +474,7 @@ public class BufferedReader2 extends Reader {
 
     /**
      * Returns a {@code Stream}, the elements of which are lines read from
-     * this {@code BufferedReader}.  The {@link Stream} is lazily populated,
+     * this {@code ByteBufferReader}.  The {@link Stream} is lazily populated,
      * i.e., read only occurs during the
      * <a href="../util/stream/package-summary.html#StreamOps">terminal
      * stream operation</a>.
@@ -488,15 +488,15 @@ public class BufferedReader2 extends Reader {
      * read the next character or line.
      *
      * <p> If an {@link IOException} is thrown when accessing the underlying
-     * {@code BufferedReader}, it is wrapped in an {@link
+     * {@code ByteBufferReader}, it is wrapped in an {@link
      * UncheckedIOException} which will be thrown from the {@code Stream}
      * method that caused the read to take place. This method will return a
-     * Stream if invoked on a BufferedReader that is closed. Any operation on
-     * that stream that requires reading from the BufferedReader after it is
+     * Stream if invoked on a ByteBufferReader that is closed. Any operation on
+     * that stream that requires reading from the ByteBufferReader after it is
      * closed, will cause an UncheckedIOException to be thrown.
      *
      * @return a {@code Stream<String>} providing the lines of text
-     *         described by this {@code BufferedReader}
+     *         described by this {@code ByteBufferReader}
      *
      * @since 1.8
      */

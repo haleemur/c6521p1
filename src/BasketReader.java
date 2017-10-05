@@ -12,36 +12,18 @@
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 public class BasketReader implements Runnable {
     private File file;
-    private HashMap<Byte, BoolArray> data;
+    private HashMap<Byte, BitArray> data;
+
     BasketReader(File file) {
         this.file = file;
         long size = file.length();
         System.out.println(file.getName() + " " + size);
-        int initialCapacity = 10;
-        data = new HashMap<Byte, BoolArray>();
-        data.put((byte)'0', new BoolArray(initialCapacity));
-        data.put((byte)'1', new BoolArray(initialCapacity));
-        data.put((byte)'2', new BoolArray(initialCapacity));
-        data.put((byte)'3', new BoolArray(initialCapacity));
-        data.put((byte)'4', new BoolArray(initialCapacity));
-        data.put((byte)'5', new BoolArray(initialCapacity));
-        data.put((byte)'6', new BoolArray(initialCapacity));
-        data.put((byte)'7', new BoolArray(initialCapacity));
-        data.put((byte)'8', new BoolArray(initialCapacity));
-        data.put((byte)'9', new BoolArray(initialCapacity));
-    }
+        int initialCapacity = (int)(size / 15);
 
-    private void assign(Set<Byte> elems) {
-        for (byte i: elems) {
-            for (byte j=0; j<data.size(); j++) {
-                data.get(j).add(j == i);
-            }
-        }
     }
 
     private void assign(byte[] record, int index) {
@@ -49,28 +31,22 @@ public class BasketReader implements Runnable {
             data.get(el).setTrue(index);
         }
     }
-    private Set<Byte> get_byte_set(String basket) {
-        return Arrays.stream(basket.substring(basket.indexOf(',') + 1).split(","))
-                .map(Byte::parseByte)
-                .collect(Collectors.toSet());
+
+    private void printBaskets() {
+
     }
 
-    private void parseBufferedReader() {
-        try {
-            BufferedReader2 buff = new BufferedReader2(new FileReader(file));
-            int limit = Integer.parseInt(buff.readLine());
-            String line;
-            while ((line = buff.readLine()) != null) {
-                System.out.println(line);
-            }
-        } catch (IOException e) {
-            System.out.println("File Not Found. Skipping...");
+    private void printRecord(byte[] record) {
+        for (byte b: record) {
+            System.out.print(((char)b) + " ");
         }
+        System.out.println();
     }
 
-    private void parseNIOReader() {
+
+    private void parseData() {
         try {
-            NIOReader buff = new NIOReader(file);
+            DataReader buff = ReaderFactory.getMemoryMapReader(file);
             int limit = Integer.parseInt(new String(buff.readLine()));
             byte[] record;
             int i=0;
@@ -80,13 +56,20 @@ public class BasketReader implements Runnable {
             buff.close();
 
         } catch(IOException e) {
-            System.out.println("File Not Found. Skipping...");
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void printCounts() {
+        for (Map.Entry<Byte, BitArray> pair : data.entrySet()) {
+            System.out.println((char)pair.getKey().byteValue() + ": " + pair.getValue().sum());
         }
     }
 
     @Override
     public void run()  {
-        parseNIOReader();
-//        parseBufferedReader();
+        parseData();
+//        printCounts();
+        System.out.println(file.getName() + " finished");
     }
 }

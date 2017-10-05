@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+
+import argparse
+from random import choice, randint
+import math
+
+parser = argparse.ArgumentParser('generate test data')
+parser.add_argument('--target', dest='target')
+parser.add_argument('--baskets', dest='baskets', type=int)
+
+parser.add_argument('--range', dest='range', type=int, nargs=2)
+parser.add_argument('--step', dest='step', type=int)
+parser.add_argument('--targetdir', dest='targetdir')
+
+
+def gen_file(target, number_of_baskets):
+    support_level = int(randint(30,50)*number_of_baskets/100)
+    with open(target, 'w') as t:
+        t.write(str(support_level))
+        t.write('\n')
+        for basket in range(number_of_baskets):
+            t.write(str(basket+1))
+            size = choice([3,4,5,6,7,8,9,10])
+            for _ in range(size):
+                el = choice([0,1,2,3,4,5,6,7,8,9])
+                t.write(',')
+                t.write(str(el))
+            t.write('\t')
+
+
+if __name__ == '__main__':
+
+    args = parser.parse_args()
+    target = args.target
+    baskets = args.baskets
+    range_ = args.range
+    step = args.step
+    targetdir = args.targetdir
+
+    if target is not None and baskets is not None:
+        gen_file(target, baskets)
+    elif range_ is not None and step is not None and targetdir:
+        for i in range(range_[0], range_[1], step):
+            for k in ['a', 'b', 'c']:
+                j = str(i) if i < 10000 else ('{:.2E}'.format(i)).replace('+', '_')
+                target = targetdir + 'test' + j + k + '.txt'
+                print(target)
+                gen_file(target, i)
