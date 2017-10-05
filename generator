@@ -42,7 +42,7 @@ if __name__ == '__main__':
     elif range_ is not None and step is not None and targetdir:
         for i in range(range_[0], range_[1], step):
             for k in ['a', 'b', 'c']:
-                j = str(i) if i < 10000 else ('{:.2E}'.format(i)).replace('+', '_')
+                j = str(i) if i < 10000 else ('{:.4E}'.format(i)).replace('+', '_')
                 target = targetdir + 'test' + j + k + '.txt'
                 print(target)
                 gen_file(target, i)
