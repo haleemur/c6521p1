@@ -4,3 +4,4 @@ out/
 *.class
 *.pyc
 unused_files
+sample_data/
