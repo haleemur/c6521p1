@@ -1,33 +1,57 @@
-import java.io.*;
-
 /**
  * The main file launches the program
  * the program accepts 1 argument that must be
  * a directory path
  */
+import java.io.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+
 public class Main {
+    static long start;
+    static File dir;
+    static boolean parallel = false;
 
-
-    private static void print(String msg) {
-        System.err.println(msg);
-    }
-    public static void main(String[] args) {
-        if (args.length != 1) {
-            print("Program only accepts 1 argument: Usage java Main <directory_path>");
+    private static void parseArgs(String[] args) {
+        if (args.length == 0 || args.length > 2) {
+            System.out.println("Program only accepts 1 required  argument & 1 optional argument: ");
+            System.out.println("Usage:\n\t java Main <directory_path> [parallel|P]");
             System.exit(1);
         }
 
-        File f = new File(args[0]);
-        if (!f.isDirectory()) {
-            print("'" + args[0] + "' is not a valid directory");
-            System.exit(1);
-        } else {
-            for (File p : f.listFiles()) {
-                Thread t = new Thread(new Reader(p));
-                t.start();
+        dir = new File(args[0]);
+        if (args.length == 2) {
+            if (args[1].equals("parallel") || args[1].equals("P")) {
+                parallel = true;
             }
         }
+        if (!dir.isDirectory()) {
+            System.out.println("'" + args[0] + "' is not a valid directory");
+            System.exit(1);
+        }
+    }
 
+    public static void main(String[] args) {
+        start = System.currentTimeMillis();
+        parseArgs(args);
+        process();
+        System.out.printf("total execution time: %.3f (seconds)", (System.currentTimeMillis()-start) / 1000.0);
+    }
 
+    private static void process() {
+
+        List<File> files = Arrays.stream(dir.listFiles()).filter(File::isFile).collect(Collectors.toList());
+
+        ExecutorService executor = parallel ? Executors.newWorkStealingPool(): Executors.newSingleThreadExecutor();
+
+        for (File file: files) {
+            executor.submit(new BasketReader(file));
+        }
+        executor.shutdown();
+        while (!executor.isTerminated()) {}
     }
 }
