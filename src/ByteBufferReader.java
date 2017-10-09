@@ -2,16 +2,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
 public class ByteBufferReader implements DataReader {
     static int defaultBufferSize = 1024;
-    byte[] carryOver;
+    char[] carryOver;
     int nCarryOver = 0;
     FileChannel fc;
     ByteBuffer buffer;
+    CharBuffer charBuffer;
     boolean EOFReached = false;
 
     ByteBufferReader(File file) throws IOException {
@@ -22,17 +24,15 @@ public class ByteBufferReader implements DataReader {
         fc = (new FileInputStream(file)).getChannel();
         int size = (fc.size() > (long)(2*bufferSize)) ? bufferSize : (int)fc.size();
         buffer = ByteBuffer.allocate(size);
+        charBuffer = buffer.asCharBuffer();
     }
 
     public void close() throws IOException {
         fc.close();
     }
-    public byte[] readSeparated(char separator) throws IOException {
-        return readSeparated((byte)separator);
-    }
 
-    public byte[] readLine() throws IOException {
-        byte[] line = readSeparated('\n');
+    public char[] readLine() throws IOException {
+        char[] line = readSeparated('\n');
         // handle windows endings;
         if (line[line.length-1] == (int)'\r') {
             return Arrays.copyOfRange(line, 0, line.length-1);
@@ -40,13 +40,9 @@ public class ByteBufferReader implements DataReader {
         return line;
     }
 
-    public byte[] readRecord(char delimiter) throws IOException {
-        return readRecord((byte)delimiter);
-    }
-
-    public byte[] readRecord(byte delimiter) throws IOException {
+    public char[] readRecord(char delimiter) throws IOException {
         int i;
-        byte[] row = readSeparated('\t');
+        char[] row = readSeparated('\t');
         if (row == null) {
             return null;
         } else {
@@ -54,7 +50,7 @@ public class ByteBufferReader implements DataReader {
                 if (row[i] == delimiter) break;
             }
 
-            byte[] record = new byte[1+(row.length - i - 1)/2];
+            char[] record = new char[1+(row.length - i - 1)/2];
             int recordSize = 0;
             for (int j=i+1; j< row.length; j+=2) {
                 record[recordSize++] = row[j];
@@ -63,32 +59,32 @@ public class ByteBufferReader implements DataReader {
         }
     }
 
-    public byte[] readSeparated(byte sep) throws IOException {
-        byte[] record;
+    public char[] readSeparated(char sep) throws IOException {
+        char[] record;
         int from, to;
         if (EOFReached) return null; // return null if the end of file is reached.
         for (;;) {
             // handle memory
-            if (buffer.limit() == buffer.position()) {
-                buffer.clear();
+            if (charBuffer.limit() == charBuffer.position()) {
+                charBuffer.clear();
             }
-            if (buffer.position() == 0 && buffer.limit() > 0) {
+            if (charBuffer.position() == 0 && charBuffer.limit() > 0) {
                 if(fc.read(buffer) <= 0) {
                     EOFReached = true;
                     return carryOver;
                 }
-                buffer.flip();
+                charBuffer.flip();
             }
             // extract record if end delimiter found.
-            from = buffer.position();
-            for(int i=from; i<buffer.limit();i++) {
-                if (buffer.get() == sep) {
-                    to = buffer.position()-1;
+            from = charBuffer.position();
+            for(int i=from; i<charBuffer.limit();i++) {
+                if (charBuffer.get() == sep) {
+                    to = charBuffer.position()-1;
                     if (nCarryOver == 0) {
-                        return Arrays.copyOfRange(buffer.array(), from, to);
+                        return Arrays.copyOfRange(charBuffer.array(), from, to);
                     }
 
-                    record = new byte[nCarryOver + buffer.position()-from-1];
+                    record = new char[nCarryOver + buffer.position()-from-1];
                     // the extra 1 subtracted is for the sep character
                     System.arraycopy(
                             carryOver, 0,
@@ -104,8 +100,14 @@ public class ByteBufferReader implements DataReader {
             }
             // memory limit reached, copy to row
             nCarryOver = buffer.position() - from;
-            carryOver = new byte[nCarryOver];
-            carryOver = Arrays.copyOfRange(buffer.array(), from, buffer.position());
+            carryOver = new char[nCarryOver];
+            carryOver = Arrays.copyOfRange(charBuffer.array(), from, buffer.position());
         }
+    }
+
+    public int position() {
+        return -1;
+    }
+    public void seek(int n) throws IOException {
     }
 }

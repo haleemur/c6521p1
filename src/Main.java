@@ -49,9 +49,10 @@ public class Main {
         ExecutorService executor = parallel ? Executors.newWorkStealingPool(): Executors.newSingleThreadExecutor();
 
         for (File file: files) {
-            executor.submit(new BasketReader(file));
+            executor.submit(new FrequentItemset(file));
         }
         executor.shutdown();
         while (!executor.isTerminated()) {}
+        System.out.println("Processed Finished");
     }
 }
