@@ -49,11 +49,13 @@ public class FrequentPairCalculator implements Runnable {
             FPTree prefixTree = buildConditionalPrefixTree(ns, subTree);
             for (Character prefix : prefixTree.getNodeKeys()) {
                 bldr = new StringBuilder();
+                bldr.append("{");
                 bldr.append(prefix);
                 for (Character k : prefixTree.getSuffix()) {
-                    bldr.append(", ");
+                    bldr.append(",");
                     bldr.append(k);
                 }
+                bldr.append("}");
                 synchronized(this) {bw.write(bldr.toString() + "\n");}
             }
             return prefixTree;

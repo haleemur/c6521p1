@@ -40,7 +40,6 @@ public class FrequentItemset implements Runnable {
             int limit = Integer.parseInt(new String(buff.readLine()));
             int position = buff.position();
             FPTree tree = new FPTree(elements, limit, new File(outName));
-            String x;
             char[] record;
 //            pass 1
             while ((record = buff.readRecord(',')) != null ) {

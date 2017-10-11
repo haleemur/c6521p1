@@ -107,41 +107,39 @@ public class MemoryMapReader implements DataReader{
 
     public char[] readSeparated(char sep) throws IOException {
         char b;
-        int to;
+        int to; char[] temp;
         for(;;) {
-            for(;;) {
-                if (!handleBuffer()) {
-                    return null;
-                }
-                for(int i = memory.position(); i<memory.limit(); i++) {
-                    // get byte at address i
-                    // if byte == separator
-                    //      update memory position
-                    //      return row & reset row
-                    // else fill row
-                    b = memory.get(i);
-                    if (b == sep) {
-                        to = nRow;
-                        nRow = 0;
-                        memory.position(i+1);
-                        return Arrays.copyOfRange(row,0, to);
-                    }
-                    // resize if row is filled
-                    if (nRow >= row.length-1) {
-                        row = Arrays.copyOf(row, (int) (1.5 * nRow));
-                    }
-                    row[nRow++] = b;
-
-
-                }
-                // if loop exited without returning row
+            if (!handleBuffer()) {
+                return null;
+            }
+            for(int i = memory.position(); i<memory.limit(); i++) {
+                // get byte at address i
+                // if byte == separator
                 //      update memory position
-                memory.position(memory.limit());
-                if (nRow > 0 && lastMap && memory.position() == memory.limit()) {
+                //      return row & reset row
+                // else fill row
+                b = memory.get(i);
+                if (b == sep && nRow > 1) {
                     to = nRow;
                     nRow = 0;
+                    memory.position(i+1);
                     return Arrays.copyOfRange(row,0, to);
                 }
+                // resize if row is filled
+                if (nRow >= row.length-1) {
+                    row = Arrays.copyOf(row, (int) (1.5 * row.length));
+                }
+                row[nRow++] = b;
+
+
+            }
+            // if loop exited without returning row
+            //      update memory position
+            memory.position(memory.limit());
+            if (nRow > 1 && lastMap && memory.position() == memory.limit()) {
+                to = nRow;
+                nRow = 0;
+                return Arrays.copyOfRange(row,0, to);
             }
         }
     }

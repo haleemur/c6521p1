@@ -14,7 +14,7 @@ parser.add_argument('--targetdir', dest='targetdir')
 
 
 def gen_file(target, number_of_baskets):
-    support_level = int(randint(10,50)*number_of_baskets/100)
+    support_level = int(randint(30,50)*number_of_baskets/100)
     with open(target, 'w') as t:
         t.write(str(support_level))
         t.write('\n')

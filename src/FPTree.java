@@ -96,18 +96,13 @@ public class FPTree {
     }
 
     public void buildTree(char[] transaction) {
-        boolean contains;
         ArrayList<Character> noDuplicates = new ArrayList<>();
-        for (char h: header) {
-            contains = false;
+        for (Character h: header) {
             for (char t: transaction) {
                 if (t == h) {
-                    contains = true;
+                    noDuplicates.add(h);
                     break;
                 }
-            }
-            if (contains) {
-                noDuplicates.add(h);
             }
         }
         root.addChildren(noDuplicates, lastNodes);
