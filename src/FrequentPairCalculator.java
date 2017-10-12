@@ -3,16 +3,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class FrequentPairCalculator implements Runnable {
-    Character ns;
-    FPTree tree;
-    boolean recursive;
-    BufferedWriter bw;
-    String fname;
+    private Character ns;
+    private FPTree tree;
+    private boolean recursive;
+    private BufferedWriter bw;
+    private String fname;
 
-    FrequentPairCalculator(BufferedWriter writer, Character ns, FPTree tree, boolean recursive) throws IOException {
-        this(writer, ns, tree, recursive, "unknown");
-
-    }
     FrequentPairCalculator(BufferedWriter writer, Character ns, FPTree tree, boolean recursive, String fname) throws IOException {
         this.ns = ns;
         this.tree = tree;
@@ -20,7 +16,8 @@ public class FrequentPairCalculator implements Runnable {
         bw = writer;
         this.fname = fname;
     }
-    public FPTree buildConditionalPrefixTree(Character ns, FPTree oldTree) {
+
+    private FPTree buildConditionalPrefixTree(Character ns, FPTree oldTree) {
         ArrayList<Character> rkBuilder;
         Node parent, node;
         node = oldTree.getLastNodes(ns);
@@ -43,7 +40,7 @@ public class FrequentPairCalculator implements Runnable {
         return tree;
     }
 
-    public FPTree conditionalPrefix(Character ns, FPTree subTree) throws IOException {
+    private FPTree conditionalPrefix(Character ns, FPTree subTree) throws IOException {
 
             StringBuilder bldr;
             FPTree prefixTree = buildConditionalPrefixTree(ns, subTree);
@@ -60,7 +57,7 @@ public class FrequentPairCalculator implements Runnable {
             }
             return prefixTree;
     }
-    public void conditionalPrefix(Character ns, FPTree subTree, boolean recursive) throws IOException{
+    private void conditionalPrefix(Character ns, FPTree subTree, boolean recursive) throws IOException{
         FPTree prefixTree = conditionalPrefix(ns, subTree);
         if (recursive && prefixTree.size() > 1) {
             Character c;

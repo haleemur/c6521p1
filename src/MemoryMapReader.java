@@ -6,20 +6,17 @@ import java.util.Arrays;
 
 public class MemoryMapReader implements DataReader{
 
-    static int defaultBufferSize = 2048;
-    static int defaultRowSize = 30;
-    int size, nChunk, nChunks;
-    char[] row;
-    int nRow = 0;
-    FileChannel fc;
-    MappedByteBuffer bytes;
-    CharBuffer memory;
+    private static int defaultRowSize = 30;
+    private int size;
+    private int nChunk;
+    private int nChunks;
+    private char[] row;
+    private int nRow = 0;
+    private FileChannel fc;
+    private MappedByteBuffer bytes;
+    private CharBuffer memory;
 
-    boolean lastMap = false;
-
-    MemoryMapReader(File file) throws IOException {
-        this(file, defaultBufferSize);
-    }
+    private boolean lastMap = false;
 
     MemoryMapReader(File file, int maxBufferSize) throws IOException  {
         fc = (new RandomAccessFile(file, "r")).getChannel();
@@ -107,7 +104,7 @@ public class MemoryMapReader implements DataReader{
 
     public char[] readSeparated(char sep) throws IOException {
         char b;
-        int to; char[] temp;
+        int to;
         for(;;) {
             if (!handleBuffer()) {
                 return null;

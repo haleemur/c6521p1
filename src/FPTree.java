@@ -24,15 +24,7 @@ public class FPTree {
         suffix.add(0, s);
     }
 
-    FPTree(char[] symbols, int support) {
-        // build the initial elements;
-        elements = new HashMap<>();
-        for (char i: symbols) {
-            elements.put(i, 0);
-        }
-        this.support = support;
-        suffix = new ArrayList<>();
-    }
+
 
     FPTree(List<Character> symbols, int support) {
         // build the initial elements;
