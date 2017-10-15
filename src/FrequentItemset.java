@@ -3,7 +3,7 @@ import java.io.*;
 
 public class FrequentItemset implements Runnable {
     private File file;
-    private static char[] elements = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+    private static int[] elements = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 //    static char[] elements = {'a', 'b', 'c', 'd', 'e'};
     private String outName;
     FrequentItemset(File file) {
@@ -13,24 +13,26 @@ public class FrequentItemset implements Runnable {
         outName = this.file.getParent() + "/output/" + this.file.getName().replace("input", "output");
     }
 
-    private void printRecord(char[] record) {
-        for (char c: record) System.out.print(c + " ");
+    private void printRecord(int[] record) {
+        for (int c: record) System.out.print(c + " ");
         System.out.println();
     }
     @Override
     public void run()  {
         try {
-            DataReader buff = ReaderFactory.getMemoryMapReader(file);
-            int limit = Integer.parseInt(new String(buff.readLine()));
+            MemoryMapReaderInt buff = ReaderFactory.getIntReader(file);
+            int limit = Integer.parseInt(String.valueOf(buff.readLine()));
+            System.out.println(limit);
             int position = buff.position();
             FPTree tree = new FPTree(elements, limit, new File(outName));
-            char[] record;
-            while ((record = buff.readRecord(',')) != null ) {
+            int[] record;
+            while ((record = buff.readRecord('\t', ',')) != null ) {
                 tree.readRecordPass1(record);
+//                printRecord(record);
             }
             tree.init();
             buff.seek(position);
-            while ((record = buff.readRecord(',')) != null) {
+            while ((record = buff.readRecord('\t', ',')) != null) {
                 tree.buildTree(record);
             }
             buff.close();

@@ -4,6 +4,7 @@
  * a directory path
  */
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -40,19 +41,20 @@ public class Main {
         parseArgs(args);
         process();
         System.out.printf("total execution time: %.3f (seconds)", (System.currentTimeMillis()-start) / 1000.0);
+
     }
 
     private static void process() {
 
-        List<File> files = Arrays.stream(dir.listFiles()).filter(File::isFile).collect(Collectors.toList());
-
+        List<File> files = new ArrayList<>();
+        for(File f: dir.listFiles()) {
+            if (f.isFile()) files.add(f);
+        }
         ExecutorService executor = parallel ? Executors.newWorkStealingPool(): Executors.newSingleThreadExecutor();
-
         for (File file: files) {
             executor.submit(new FrequentItemset(file));
         }
         executor.shutdown();
         while (!executor.isTerminated()) {}
-        System.out.println("Processed Finished");
     }
 }

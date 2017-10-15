@@ -6,40 +6,40 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class FPTree {
-    private Map<Character, Integer> elements;
-    private List<Character> header;
+    private Map<Integer, Integer> elements;
+    private List<Integer> header;
     private int support;
     private Node root;
-    private Map<Character, Node> lastNodes;
-    private List<Character> suffix;
+    private Map<Integer, Node> lastNodes;
+    private List<Integer> suffix;
     private File oput;
     public int size() {
         return header.size();
     }
-    public void setSuffix(List<Character> suf) {
-        for (char s: suf) suffix.add(s);
+    public void setSuffix(List<Integer> suf) {
+        for (int s: suf) suffix.add(s);
     }
 
-    public void setSuffix(char s, int i) {
+    public void setSuffix(int s, int i) {
         suffix.add(0, s);
     }
 
 
 
-    FPTree(List<Character> symbols, int support) {
+    FPTree(List<Integer> symbols, int support) {
         // build the initial elements;
         elements = new HashMap<>();
-        for (char i: symbols) {
+        for (int i: symbols) {
             elements.put(i, 0);
         }
         this.support = support;
         suffix = new ArrayList<>();
     }
 
-    FPTree(char[] symbols, int support, File oput) {
+    FPTree(int[] symbols, int support, File oput) {
         // build the initial elements;
         elements = new HashMap<>();
-        for (char i: symbols) {
+        for (int i: symbols) {
             elements.put(i, 0);
         }
         this.support = support;
@@ -47,25 +47,23 @@ public class FPTree {
         this.oput = oput;
     }
 
-    public void readRecordPass1(char[] transaction) {
+    public void readRecordPass1(int[] transaction) {
         Arrays.sort(transaction);
-        char[] noDuplicates = new char[transaction.length];
+        int[] noDuplicates = new int[transaction.length];
         int position = 0;
         noDuplicates[position] = transaction[0];
-        for (char e: transaction) {
+        for (int e: transaction) {
             if (e != noDuplicates[position]) {
                 noDuplicates[++position] = e;
             }
         }
-        char key;
         for (int i =0; i<=position; i++) {
-            key = noDuplicates[i];
-            elements.put(key, elements.get(key) + 1);
+            elements.put(noDuplicates[i], elements.get(noDuplicates[i]) + 1);
         }
     }
 
     public void init() {
-        ArrayList<Character> head
+        ArrayList<Integer> head
                 = elements.entrySet().stream()
                 .filter(x -> x.getValue() >= support)
                 .sorted((x, y) -> y.getValue() - x.getValue())
@@ -74,23 +72,23 @@ public class FPTree {
         init(head);
     }
 
-    public void init(List<Character> head) {
+    public void init(List<Integer> head) {
         header = new ArrayList<>();
-        for (Character c: head) {
+        for (int c: head) {
             header.add(c);
         }
         lastNodes = new HashMap<>();
 
-        for (Character entry: header) {
+        for (int entry: header) {
             lastNodes.put(entry, null);
         }
         root = new Node();
     }
 
-    public void buildTree(char[] transaction) {
-        ArrayList<Character> noDuplicates = new ArrayList<>();
-        for (Character h: header) {
-            for (char t: transaction) {
+    public void buildTree(int[] transaction) {
+        ArrayList<Integer> noDuplicates = new ArrayList<>();
+        for (int h: header) {
+            for (int t: transaction) {
                 if (t == h) {
                     noDuplicates.add(h);
                     break;
@@ -100,12 +98,12 @@ public class FPTree {
         root.addChildren(noDuplicates, lastNodes);
     }
 
-    public void buildTree(List<Character> path, int count) {
+    public void buildTree(List<Integer> path, int count) {
         root.addChildren(path, lastNodes, count);
     }
 
     public void removeLowSupport() {
-        char e;
+        int e;
         Node node;
         Integer sum;
         for (int i = header.size() - 1; i >= 0; i--) {
@@ -123,7 +121,7 @@ public class FPTree {
         }
     }
 
-    public Integer getSumCounts(char e) {
+    public Integer getSumCounts(int e) {
         Node node = lastNodes.get(e);
         if (node == null)
             return null;
@@ -136,7 +134,7 @@ public class FPTree {
     }
 
     public void frequentTuples() throws IOException {
-        char e;
+        int e;
         Integer sum;
         ExecutorService executor = Executors.newWorkStealingPool();
         ArrayList<BufferedWriter> writers = new ArrayList<>();
@@ -163,7 +161,7 @@ public class FPTree {
     }
 
     public void frequentPairs() throws IOException {
-        char e;
+        int e;
         Integer sum;
         ExecutorService executor = Executors.newWorkStealingPool();
         ArrayList<BufferedWriter> writers = new ArrayList<>();
@@ -187,23 +185,23 @@ public class FPTree {
         }
     }
 
-    public Node getLastNodes(Character c) {
+    public Node getLastNodes(Integer c) {
         return lastNodes.get(c);
     }
 
-    public Character getHeaderElement(int i) {
+    public int getHeaderElement(int i) {
         return header.get(i);
     }
 
-    public Set<Character> getNodeKeys() {
+    public Set<Integer> getNodeKeys() {
         return lastNodes.keySet();
     }
 
-    public List<Character> getSuffix() {
+    public List<Integer> getSuffix() {
         return suffix;
     }
 
-    public List<Character> getHeader() {
+    public List<Integer> getHeader() {
         return header;
     }
 

@@ -15,4 +15,8 @@ public class ReaderFactory {
     public static MemoryMapReader getMemoryMapReader(File file, int bufferSize) throws IOException {
         return new MemoryMapReader(file, bufferSize);
     }
+
+    public static MemoryMapReaderInt getIntReader(File file) throws IOException {
+        return new MemoryMapReaderInt(file, bufferSize);
+    }
 }

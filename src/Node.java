@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class Node {
-    public Character getSymbol() {
+    public Integer getSymbol() {
         return symbol;
     }
 
@@ -13,11 +13,11 @@ public class Node {
         return count;
     }
 
-    private Character symbol;
+    private Integer symbol;
     private int count;
     private Node parent = null;
     private Node next;
-    private Map<Character, Node> children;
+    private Map<Integer, Node> children;
 
     public void next(Node next) {
         this.next = next;
@@ -33,11 +33,11 @@ public class Node {
 
     Node() { children = new HashMap<>();}
 
-    Node(Character symbol, Node parent, Map<Character, Node> nextNodes) {
+    Node(Integer symbol, Node parent, Map<Integer, Node> nextNodes) {
         this(symbol, parent, nextNodes, 1);
 
     }
-    Node(Character symbol, Node parent, Map<Character, Node> nextNodes, int count) {
+    Node(Integer symbol, Node parent, Map<Integer, Node> nextNodes, int count) {
         this.symbol = symbol;
         this.count = count;
         this.parent = parent;
@@ -55,7 +55,7 @@ public class Node {
         count -= n;
     }
 
-    public Node addChild(Character symbol, Map<Character, Node> nextNodes) {
+    public Node addChild(Integer symbol, Map<Integer, Node> nextNodes) {
         if (children.get(symbol) == null) {
             children.put(symbol, new Node(symbol, this, nextNodes));
         } else {
@@ -65,7 +65,7 @@ public class Node {
         return children.get(symbol);
     }
 
-    public Node addChild(Character symbol, Map<Character, Node> nextNodes, int count) {
+    public Node addChild(Integer symbol, Map<Integer, Node> nextNodes, int count) {
         if (children.get(symbol) == null) {
             children.put(symbol, new Node(symbol, this, nextNodes, count));
         } else {
@@ -75,7 +75,7 @@ public class Node {
         return children.get(symbol);
     }
 
-    public void addChildren(List<Character> symbols, Map<Character, Node> nextNodes) {
+    public void addChildren(List<Integer> symbols, Map<Integer, Node> nextNodes) {
 
         Node child = addChild(symbols.get(0), nextNodes);
 
@@ -84,7 +84,7 @@ public class Node {
         }
     }
 
-    public void addChildren(List<Character> symbols, Map<Character, Node> nextNodes, int count) {
+    public void addChildren(List<Integer> symbols, Map<Integer, Node> nextNodes, int count) {
 
         Node child = addChild(symbols.get(0), nextNodes, count);
 

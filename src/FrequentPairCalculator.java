@@ -3,13 +3,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class FrequentPairCalculator implements Runnable {
-    private Character ns;
+    private Integer ns;
     private FPTree tree;
     private boolean recursive;
     private BufferedWriter bw;
     private String fname;
 
-    FrequentPairCalculator(BufferedWriter writer, Character ns, FPTree tree, boolean recursive, String fname) throws IOException {
+    FrequentPairCalculator(BufferedWriter writer, Integer ns, FPTree tree, boolean recursive, String fname) throws IOException {
         this.ns = ns;
         this.tree = tree;
         this.recursive = recursive;
@@ -17,8 +17,8 @@ public class FrequentPairCalculator implements Runnable {
         this.fname = fname;
     }
 
-    private FPTree buildConditionalPrefixTree(Character ns, FPTree oldTree) {
-        ArrayList<Character> rkBuilder;
+    private FPTree buildConditionalPrefixTree(Integer ns, FPTree oldTree) {
+        ArrayList<Integer> rkBuilder;
         Node parent, node;
         node = oldTree.getLastNodes(ns);
         FPTree tree = new FPTree(oldTree.getHeader().subList(0,oldTree.getHeader().indexOf(ns)), oldTree.getSupport());
@@ -40,27 +40,27 @@ public class FrequentPairCalculator implements Runnable {
         return tree;
     }
 
-    private FPTree conditionalPrefix(Character ns, FPTree subTree) throws IOException {
+    private FPTree conditionalPrefix(Integer ns, FPTree subTree) throws IOException {
 
             StringBuilder bldr;
             FPTree prefixTree = buildConditionalPrefixTree(ns, subTree);
-            for (Character prefix : prefixTree.getNodeKeys()) {
+            for (Integer prefix : prefixTree.getNodeKeys()) {
                 bldr = new StringBuilder();
                 bldr.append("{");
                 bldr.append(prefix);
-                for (Character k : prefixTree.getSuffix()) {
+                for (Integer k : prefixTree.getSuffix()) {
                     bldr.append(",");
                     bldr.append(k);
                 }
                 bldr.append("}");
-                synchronized(this) {bw.write(bldr.toString() + "\n");}
+                bw.write(bldr.toString() + "\n");
             }
             return prefixTree;
     }
-    private void conditionalPrefix(Character ns, FPTree subTree, boolean recursive) throws IOException{
+    private void conditionalPrefix(Integer ns, FPTree subTree, boolean recursive) throws IOException{
         FPTree prefixTree = conditionalPrefix(ns, subTree);
         if (recursive && prefixTree.size() > 1) {
-            Character c;
+            Integer c;
             for (int i = prefixTree.getHeader().size()-1; i > 0; i--) {
                 c = prefixTree.getHeaderElement(i);
                 conditionalPrefix(c, prefixTree);
