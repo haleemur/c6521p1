@@ -40,26 +40,22 @@ public class ByteBufferReader implements DataReader {
         return line;
     }
 
-    public char[] readRecord(char delimiter) throws IOException {
-        int i;
-        char[] row = readSeparated('\t');
+    public int[] readRecord(char recordSeparator, char fieldSeparator) throws IOException {
+        char[] row = readSeparated(recordSeparator);
+
         if (row == null) {
             return null;
-        } else {
-            for(i=0;i<row.length;i++) {
-                if (row[i] == delimiter) break;
-            }
-
-            char[] record = new char[1+(row.length - i - 1)/2];
-            int recordSize = 0;
-            for (int j=i+1; j< row.length; j+=2) {
-                record[recordSize++] = row[j];
-            }
-            return record;
         }
+        String[] rowString = String.valueOf(row).split(String.valueOf(fieldSeparator));
+        int[] record = new int[rowString.length-1];
+        for (int i=0;i<record.length;i++) {
+            record[i] = Integer.parseInt(rowString[i+1]);
+        }
+
+        return record;
     }
 
-    public char[] readSeparated(char sep) throws IOException {
+    private char[] readSeparated(char sep) throws IOException {
         char[] record;
         int from, to;
         if (EOFReached) return null; // return null if the end of file is reached.

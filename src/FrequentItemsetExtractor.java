@@ -2,36 +2,35 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class FrequentPairCalculator implements Runnable {
+public class FrequentItemsetExtractor implements Runnable {
     private Integer ns;
     private FPTree tree;
-    private boolean recursive;
-    private BufferedWriter bw;
-    private String fname;
+    private boolean all_nsets;
+    private final BufferedWriter bw;
 
-    FrequentPairCalculator(BufferedWriter writer, Integer ns, FPTree tree, boolean recursive, String fname) throws IOException {
+    FrequentItemsetExtractor(BufferedWriter writer, Integer ns, FPTree tree, boolean all_nsets) throws IOException {
         this.ns = ns;
         this.tree = tree;
-        this.recursive = recursive;
+        this.all_nsets = all_nsets;
         bw = writer;
-        this.fname = fname;
     }
 
     private FPTree buildConditionalPrefixTree(Integer ns, FPTree oldTree) {
         ArrayList<Integer> rkBuilder;
-        Node parent, node;
+        Node parent, node, root;
         node = oldTree.getLastNodes(ns);
-        FPTree tree = new FPTree(oldTree.getHeader().subList(0,oldTree.getHeader().indexOf(ns)), oldTree.getSupport());
-        tree.init(oldTree.getHeader().subList(0,oldTree.getHeader().indexOf(ns)));
+        root = oldTree.getRoot();
+        int newHeaderSize = oldTree.getHeader().indexOf(ns);
+        FPTree tree = new FPTree(oldTree.getHeader().subList(0,newHeaderSize), oldTree.getSupport(), oldTree.getSuffix());
+        tree.init(oldTree.getHeader().subList(0,newHeaderSize));
 
-        tree.setSuffix(oldTree.getSuffix());
-        tree.setSuffix(ns, 0);
+        tree.addSuffix(ns);
         do {
             parent = node.parent();
             if (parent == oldTree.getRoot()) continue;
             rkBuilder = new ArrayList<>();
             rkBuilder.add(parent.getSymbol());
-            while ((parent = parent.parent()) != oldTree.getRoot()) {
+            while ((parent = parent.parent()) != root) {
                 rkBuilder.add(0, parent.getSymbol());
             }
             tree.buildTree(rkBuilder, node.getCount());
@@ -42,21 +41,24 @@ public class FrequentPairCalculator implements Runnable {
 
     private FPTree conditionalPrefix(Integer ns, FPTree subTree) throws IOException {
 
-            StringBuilder bldr;
+            StringBuilder builder;
             FPTree prefixTree = buildConditionalPrefixTree(ns, subTree);
             for (Integer prefix : prefixTree.getNodeKeys()) {
-                bldr = new StringBuilder();
-                bldr.append("{");
-                bldr.append(prefix);
+                builder = new StringBuilder("{");
+                builder.append(prefix);
                 for (Integer k : prefixTree.getSuffix()) {
-                    bldr.append(",");
-                    bldr.append(k);
+                    builder.append(",");
+                    builder.append(k);
                 }
-                bldr.append("}");
-                bw.write(bldr.toString() + "\n");
+                builder.append("}");
+                synchronized (bw) {
+                    bw.write(builder.toString());
+                    bw.newLine();
+                }
             }
             return prefixTree;
     }
+
     private void conditionalPrefix(Integer ns, FPTree subTree, boolean recursive) throws IOException{
         FPTree prefixTree = conditionalPrefix(ns, subTree);
         if (recursive && prefixTree.size() > 1) {
@@ -71,8 +73,7 @@ public class FrequentPairCalculator implements Runnable {
     @Override
     public void run() {
         try {
-            conditionalPrefix(ns, tree, recursive);
-            bw.close();
+            conditionalPrefix(ns, tree, all_nsets);
 
         } catch (IOException e) {
             System.out.println(e.getMessage());

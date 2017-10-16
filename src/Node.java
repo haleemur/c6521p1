@@ -1,7 +1,4 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Node {
@@ -75,26 +72,26 @@ public class Node {
         return children.get(symbol);
     }
 
-    public void addChildren(List<Integer> symbols, Map<Integer, Node> nextNodes) {
-
-        Node child = addChild(symbols.get(0), nextNodes);
-
-        if (symbols.size() > 1) {
-            child.addChildren(symbols.subList(1, symbols.size()), nextNodes);
+    public void addChildren(int[] symbols, int length, Map<Integer, Node> nextNodes) {
+        int i=0;
+        Node child;
+        child = addChild(symbols[i++], nextNodes);
+        while(i < length) {
+            child  = child.addChild(symbols[i++], nextNodes);
         }
     }
 
     public void addChildren(List<Integer> symbols, Map<Integer, Node> nextNodes, int count) {
-
-        Node child = addChild(symbols.get(0), nextNodes, count);
-
-        if (symbols.size() > 1) {
-            child.addChildren(symbols.subList(1, symbols.size()), nextNodes, count);
+        int i=0;
+        Node child;
+        child = addChild(symbols.get(i++), nextNodes, count);
+        while(i < symbols.size()) {
+            child  = child.addChild(symbols.get(i++), nextNodes, count);
         }
     }
 
-    public ArrayList<Node> getChildren() {
-        return children.entrySet().stream().map(Map.Entry::getValue).collect(Collectors.toCollection(ArrayList::new));
+    public Collection<Node> getChildren() {
+        return children.values();
     }
 
     public void setParent(Node parent) {

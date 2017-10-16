@@ -1,89 +1,75 @@
-import java.io.*;
-import java.nio.*;
+import javax.xml.crypto.Data;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.CharBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public class MemoryMapReader implements DataReader{
+public class MemoryMapReader implements DataReader {
 
-    private static int defaultRowSize = 30;
-    private int size;
-    private int nChunk;
-    private int nChunks;
-    private char[] row;
-    private int nRow = 0;
+    private int bufferSize;
+    private int nextChunk;
+    private int numChunks;
+    private int[] record = new int[10];
+    private int recordSize = 0;
+    private char[] line = new char[30];
+    private int lineSize = 0;
+    private int val = 0;
     private FileChannel fc;
     private MappedByteBuffer bytes;
     private CharBuffer memory;
-
     private boolean lastMap = false;
 
     MemoryMapReader(File file, int maxBufferSize) throws IOException  {
         fc = (new RandomAccessFile(file, "r")).getChannel();
-        size = (fc.size() > (long)(2*maxBufferSize)) ? maxBufferSize : (int)fc.size();
-        nChunks = (int)Math.ceil(fc.size()/size);
-        nChunk = 0;
-        row = new char[defaultRowSize];
+        bufferSize = (fc.size() > (long)(2*maxBufferSize)) ? maxBufferSize : (int)fc.size();
+        numChunks = (int)Math.ceil(fc.size()/ bufferSize);
+        nextChunk = 0;
+
     }
 
     public void seek(int n) throws IOException {
-        lastMap = false;
-        nRow = 0;
-        nChunk = n / size;
-        int pos = n % size;
-        memory.clear();
-        readIntoBuffer();
+        recordSize = 0;
+        lineSize = 0;
+        int pos = n % bufferSize;
+        if (nextChunk != (n/bufferSize + 1)) {
+            nextChunk = n / bufferSize;
+            memory.clear();
+            readIntoBuffer();
+
+        } else {
+            lastMap = (nextChunk >= numChunks);
+
+        }
         memory.position(pos);
     }
 
     public int position() {
-        return (nChunk-1)*size + memory.position();
+        return (nextChunk - 1) * bufferSize + memory.position();
     }
 
     public void close() throws IOException {
         fc.close();
     }
 
-    public char[] readLine() throws IOException {
-        char[] line = readSeparated('\n');
-
-        // handle windows endings;
-        if (line[line.length-1] == (byte)'\r') {
-            return Arrays.copyOfRange(line, 0, line.length-1);
-        }
-        return line;
-    }
-
-    public char[] readRecord(char delimiter) throws IOException {
-        int i, j;
-        char[] row = readSeparated('\t');
-        if (row == null) {
-            return null;
-        } else {
-            for(i=0;i<row.length;i++) {
-                if (row[i] == delimiter) break;
-            }
-            char[] record = new char[1+(row.length - i - 1)/2];
-            int recordSize = 0;
-            for (j=i+1; j< row.length; j+=2) {
-                record[recordSize++] = row[j];
-            }
-            return record;
-        }
-    }
 
     private void readIntoBuffer() throws IOException {
-        if (lastMap) return;
         int mapSize;
-        if(nChunk >= nChunks) {
+
+        if (lastMap) return;
+        if(nextChunk >= numChunks -1) {
             lastMap = true;
-            mapSize = (int)fc.size()-nChunk*size;
+            mapSize = (int)fc.size() - (nextChunk * bufferSize);
         } else {
-            mapSize = size;
+            mapSize = bufferSize;
         }
-        bytes = fc.map(FileChannel.MapMode.READ_ONLY,nChunk*size,mapSize);
+        bytes = fc.map(FileChannel.MapMode.READ_ONLY, nextChunk * bufferSize,mapSize);
         memory = StandardCharsets.UTF_8.newDecoder().decode(bytes);
-        nChunk++;
+        nextChunk++;
+
     }
 
     private boolean handleBuffer() throws IOException {
@@ -102,9 +88,48 @@ public class MemoryMapReader implements DataReader{
         return true;
     }
 
-    public char[] readSeparated(char sep) throws IOException {
+    public char[] readLine() throws IOException {
         char b;
         int to;
+        for(;;) {
+            if (!handleBuffer()) {
+                return null;
+            }
+            for (int i = memory.position(); i < memory.limit(); i++) {
+                b = memory.get(i);
+                if (b == '\n') {
+                    to = lineSize;
+                    lineSize = 0;
+                    memory.position(i+1);
+                    if (to > 1 && line[to-1] == '\r') {
+                        return Arrays.copyOfRange(line, 0, to-1);
+                    } else if (to > 0 && line[to-1] != '\r') {
+                        return Arrays.copyOfRange(line, 0, to);
+                    }
+                }
+                if (lineSize >= line.length-1) {
+                    line = Arrays.copyOf(line, (int) (1.5 * line.length));
+                }
+                line[lineSize++] = b;
+            }
+            memory.position(memory.limit());
+            if (lineSize > 0 && nextChunk >= numChunks) {
+                to = lineSize;
+                lineSize = 0;
+                if (to > 1 && line[to-1] == '\r') {
+                    return Arrays.copyOfRange(line, 0, to-1);
+                } else if (to > 0 && line[to-1] != '\r') {
+                    return Arrays.copyOfRange(line, 0, to);
+                }
+            }
+        }
+    }
+
+
+    public int[] readRecord(char recordSeparator, char fieldSeparator) throws IOException {
+        char b;
+        int to;
+
         for(;;) {
             if (!handleBuffer()) {
                 return null;
@@ -113,30 +138,39 @@ public class MemoryMapReader implements DataReader{
                 // get byte at address i
                 // if byte == separator
                 //      update memory position
-                //      return row & reset row
-                // else fill row
+                //      return record & reset record
+                // else fill record
                 b = memory.get(i);
-                if (b == sep && nRow > 1) {
-                    to = nRow;
-                    nRow = 0;
+                if (b == recordSeparator) {
+                    record[recordSize++] = val;
+                    val = 0;
+                    to = recordSize;
+                    recordSize = 0;
                     memory.position(i+1);
-                    return Arrays.copyOfRange(row,0, to);
+                    if (to > 0)
+                        return Arrays.copyOfRange(record,1, to);
+                } else if (b == fieldSeparator) {
+                    record[recordSize++] = val;
+                    val = 0;
+                } else {
+                    val = 10 * val + Integer.parseInt(String.valueOf(b));
                 }
-                // resize if row is filled
-                if (nRow >= row.length-1) {
-                    row = Arrays.copyOf(row, (int) (1.5 * row.length));
+                // resize if record is filled
+                if (recordSize >= record.length-1) {
+                    record = Arrays.copyOf(record, (int) (1.5 * record.length));
                 }
-                row[nRow++] = b;
-
-
             }
-            // if loop exited without returning row
+            // if loop exited without returning record
             //      update memory position
             memory.position(memory.limit());
-            if (nRow > 1 && lastMap && memory.position() == memory.limit()) {
-                to = nRow;
-                nRow = 0;
-                return Arrays.copyOfRange(row,0, to);
+            //
+            if (recordSize > 0 && nextChunk >= numChunks) {
+                record[recordSize++] = val;
+                val = 0;
+                to = recordSize;
+                recordSize = 0;
+                if (to > 0)
+                    return Arrays.copyOfRange(record,1, to);
             }
         }
     }

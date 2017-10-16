@@ -3,7 +3,6 @@ import java.util.*;
 import java.util.Map.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 public class FPTree {
     private Map<Integer, Integer> elements;
@@ -11,30 +10,26 @@ public class FPTree {
     private int support;
     private Node root;
     private Map<Integer, Node> lastNodes;
-    private List<Integer> suffix;
+    private Deque<Integer> suffix;
     private File oput;
     public int size() {
         return header.size();
     }
-    public void setSuffix(List<Integer> suf) {
-        for (int s: suf) suffix.add(s);
+
+    public void addSuffix(int s) {
+        suffix.push(s);
     }
 
-    public void setSuffix(int s, int i) {
-        suffix.add(0, s);
-    }
-
-
-
-    FPTree(List<Integer> symbols, int support) {
+    FPTree(List<Integer> symbols, int support, Deque<Integer> suffix) {
         // build the initial elements;
         elements = new HashMap<>();
         for (int i: symbols) {
             elements.put(i, 0);
         }
         this.support = support;
-        suffix = new ArrayList<>();
+        this.suffix = new ArrayDeque<>(suffix);
     }
+
 
     FPTree(int[] symbols, int support, File oput) {
         // build the initial elements;
@@ -43,7 +38,7 @@ public class FPTree {
             elements.put(i, 0);
         }
         this.support = support;
-        suffix = new ArrayList<>();
+        suffix = new ArrayDeque<>();
         this.oput = oput;
     }
 
@@ -63,22 +58,20 @@ public class FPTree {
     }
 
     public void init() {
-        ArrayList<Integer> head
-                = elements.entrySet().stream()
-                .filter(x -> x.getValue() >= support)
-                .sorted((x, y) -> y.getValue() - x.getValue())
-                .map(Entry::getKey)
-                .collect(Collectors.toCollection(ArrayList::new));
-        init(head);
+        header = new ArrayList<>(elements.size());
+        lastNodes = new HashMap<>();
+        for (Entry<Integer, Integer> elem: elements.entrySet()) {
+            if (elem.getValue() >= support) {
+                header.add(elem.getKey());
+                lastNodes.put(elem.getKey(), null);
+            }
+        }
+        root = new Node();
     }
 
     public void init(List<Integer> head) {
-        header = new ArrayList<>();
-        for (int c: head) {
-            header.add(c);
-        }
+        header = new ArrayList<>(head);
         lastNodes = new HashMap<>();
-
         for (int entry: header) {
             lastNodes.put(entry, null);
         }
@@ -86,16 +79,19 @@ public class FPTree {
     }
 
     public void buildTree(int[] transaction) {
-        ArrayList<Integer> noDuplicates = new ArrayList<>();
+        int[] noDuplicates = new int[header.size()];
+        int noDuplicateLength = 0;
         for (int h: header) {
             for (int t: transaction) {
                 if (t == h) {
-                    noDuplicates.add(h);
+                    noDuplicates[noDuplicateLength++] = h;
                     break;
                 }
             }
         }
-        root.addChildren(noDuplicates, lastNodes);
+        if (noDuplicateLength > 0) {
+            root.addChildren(noDuplicates, noDuplicateLength, lastNodes);
+        }
     }
 
     public void buildTree(List<Integer> path, int count) {
@@ -103,9 +99,8 @@ public class FPTree {
     }
 
     public void removeLowSupport() {
-        int e;
+        int e, sum;
         Node node;
-        Integer sum;
         for (int i = header.size() - 1; i >= 0; i--) {
             e = header.get(i);
             sum = getSumCounts(e);
@@ -121,10 +116,10 @@ public class FPTree {
         }
     }
 
-    public Integer getSumCounts(int e) {
+    public int getSumCounts(int e) {
         Node node = lastNodes.get(e);
         if (node == null)
-            return null;
+            return 0;
 
         int sum = node.getCount();
         while ((node = node.next()) != null) {
@@ -133,56 +128,26 @@ public class FPTree {
         return sum;
     }
 
-    public void frequentTuples() throws IOException {
+    public void frequentSets(boolean all_nsets) throws IOException {
         int e;
-        Integer sum;
+        int sum;
         ExecutorService executor = Executors.newWorkStealingPool();
-        ArrayList<BufferedWriter> writers = new ArrayList<>();
+//        FrequentItemsetExtractor f;
         BufferedWriter bw;
+        if (!oput.exists()) {
+            oput.createNewFile();
+        }
+        bw = new BufferedWriter(new FileWriter(oput.getAbsoluteFile(), true));
         for (int i = header.size() - 1; i > 0; i--) {
             e = header.get(i);
             sum = getSumCounts(e);
-            if (sum == null) continue;
-            if (sum >= support) {
-                if (sum >= support) {
-                    if (!oput.exists()) {
-                        oput.createNewFile();
-                    }
-                    bw = new BufferedWriter(new FileWriter(oput.getAbsoluteFile(), true));
-                    executor.submit(new FrequentPairCalculator(bw, e, this, true, oput.getName()));
-                }
-            }
+            if (sum < support) continue;
+            executor.submit(new FrequentItemsetExtractor(bw, e, this, false));
+//            f = new FrequentItemsetExtractor(bw, e, this, all_nsets);
+//            f.run();
         }
         executor.shutdown();
         while (!executor.isTerminated()) {}
-        for (BufferedWriter writer: writers) {
-            writer.close();
-        }
-    }
-
-    public void frequentPairs() throws IOException {
-        int e;
-        Integer sum;
-        ExecutorService executor = Executors.newWorkStealingPool();
-        ArrayList<BufferedWriter> writers = new ArrayList<>();
-        BufferedWriter bw;
-        for (int i = header.size() - 1; i > 0; i--) {
-            e = header.get(i);
-            sum = getSumCounts(e);
-            if (sum == null) continue;
-            if (sum >= support) {
-                if (!oput.exists()) {
-                    oput.createNewFile();
-                }
-                bw = new BufferedWriter(new FileWriter(oput.getAbsoluteFile(), true));
-                executor.submit(new FrequentPairCalculator(bw, e, this, false, oput.getName()));
-            }
-        }
-        executor.shutdown();
-        while (!executor.isTerminated()) {}
-        for (BufferedWriter writer: writers) {
-            writer.close();
-        }
     }
 
     public Node getLastNodes(Integer c) {
@@ -197,7 +162,7 @@ public class FPTree {
         return lastNodes.keySet();
     }
 
-    public List<Integer> getSuffix() {
+    public Deque<Integer> getSuffix() {
         return suffix;
     }
 

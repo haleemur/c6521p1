@@ -20,7 +20,7 @@ public class Main {
     private static void parseArgs(String[] args) {
         if (args.length == 0 || args.length > 2) {
             System.out.println("Program only accepts 1 required  argument & 1 optional argument: ");
-            System.out.println("Usage:\n\t java Main <directory_path> [parallel|P]");
+            System.out.println("Usage:\n\t>java Main <directory_path> [parallel|P]");
             System.exit(1);
         }
 
@@ -40,7 +40,7 @@ public class Main {
         start = System.currentTimeMillis();
         parseArgs(args);
         process();
-        System.out.printf("total execution time: %.3f (seconds)", (System.currentTimeMillis()-start) / 1000.0);
+        System.out.printf("total execution time: %d (ms)", (System.currentTimeMillis()-start));
 
     }
 
