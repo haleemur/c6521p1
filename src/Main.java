@@ -4,6 +4,7 @@
  * a directory path
  */
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -19,7 +20,7 @@ public class Main {
     private static void parseArgs(String[] args) {
         if (args.length == 0 || args.length > 2) {
             System.out.println("Program only accepts 1 required  argument & 1 optional argument: ");
-            System.out.println("Usage:\n\t java Main <directory_path> [parallel|P]");
+            System.out.println("Usage:\n\t>java Main <directory_path> [parallel|P]");
             System.exit(1);
         }
 
@@ -39,17 +40,19 @@ public class Main {
         start = System.currentTimeMillis();
         parseArgs(args);
         process();
-        System.out.printf("total execution time: %.3f (seconds)", (System.currentTimeMillis()-start) / 1000.0);
+        System.out.printf("total execution time: %d (ms)", (System.currentTimeMillis()-start));
+
     }
 
     private static void process() {
 
-        List<File> files = Arrays.stream(dir.listFiles()).filter(File::isFile).collect(Collectors.toList());
-
+        List<File> files = new ArrayList<>();
+        for(File f: dir.listFiles()) {
+            if (f.isFile()) files.add(f);
+        }
         ExecutorService executor = parallel ? Executors.newWorkStealingPool(): Executors.newSingleThreadExecutor();
-
         for (File file: files) {
-            executor.submit(new BasketReader(file));
+            executor.submit(new FrequentItemset(file));
         }
         executor.shutdown();
         while (!executor.isTerminated()) {}

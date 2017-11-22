@@ -22,8 +22,9 @@ public class BitSetArray implements BitArray {
         if (bitSet == null) {
             throw new IllegalArgumentException("The Array must not be null");
         }
-        bools = bitSet;
-        this.capacity = bitSet.size();
+        capacity = bitSet.size();
+        bools = new BitSet(capacity);
+        bools.or(bitSet);
         length = bitSet.length();
     }
 
